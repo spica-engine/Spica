@@ -4,7 +4,8 @@ import {mongodb, _mongodb} from "./mongo";
 import {ObjectId} from "./objectid";
 
 process.once("SIGTERM", () => {
-  close(false, () => process.exit());
+  close(false);
+  process.exit();
 });
 
 let connection: _mongodb.MongoClient = globalThis[Symbol.for("kDatabaseDevkitConn")];
@@ -34,18 +35,13 @@ function checkEnvironment() {
 }
 
 async function connect(): Promise<_mongodb.MongoClient> {
-  if (!connected()) {
+  if (!connection) {
     connection = new mongodb.MongoClient(process.env.__INTERNAL__SPICA__MONGOURL__, {
       replicaSet: process.env.__INTERNAL__SPICA__MONGOREPL__,
-      appname: `Functions on ${process.env.RUNTIME || "unknown"} runtime.`,
-      useNewUrlParser: true,
-      // @ts-ignore
-      useUnifiedTopology: true
+      appName: `Functions on ${process.env.RUNTIME || "unknown"} runtime.`,
     });
   }
-  if (!connection.isConnected()) {
-    await connection.connect();
-  }
+  await connection.connect();
   return connection;
 }
 
@@ -68,7 +64,7 @@ export async function database(): Promise<_mongodb.Db> {
   const collection = db.collection;
 
   db.collection = (...args) => {
-    const coll: _mongodb.Collection = collection.call(db, ...args);
+    const coll: _mongodb.Collection<any> = collection.call(db, ...args);
     coll.watch = util.deprecate(
       coll.watch,
       `It is not advised to use 'watch' under spica/functions environment. I hope that you know what you are doing.`
@@ -81,12 +77,12 @@ export async function database(): Promise<_mongodb.Db> {
     };
 
     const findOne = coll.findOne;
-    coll.findOne = (filter, ...args) => {
+    coll.findOne = (filter?, ...args) => {
       validateDocs(filter);
       return findOne.bind(coll)(filter, ...args);
     };
     const find = coll.find;
-    coll.find = (filter, ...args) => {
+    coll.find = (filter?, ...args) => {
       validateDocs(filter);
       return find.bind(coll)(filter, ...args);
     };
@@ -158,14 +154,10 @@ function validateDocs(doc: object | object[]) {
   }
 }
 
-export function close(force?: boolean, cb?: (...args: any) => void): Promise<void> | void {
+export function close(force?: boolean): Promise<void> | void {
   if (connection) {
     globalThis[Symbol.for("kDatabaseDevkitConn")] = undefined;
-    return connection.close(force, cb);
+    return connection.close(force);
   }
-  return typeof cb == "function" ? cb() : Promise.resolve();
-}
-
-export function connected() {
-  return connection && connection.isConnected();
+  return Promise.resolve();
 }

@@ -135,8 +135,17 @@ describe("Status", () => {
             expiresIn: 1000,
             issuer: "spica",
             maxExpiresIn: 1000,
+            refreshTokenExpiresIn: 1000,
             secretOrKey: "spica",
-            entryLimit: 20
+            entryLimit: 20,
+            blockingOptions: {
+              failedAttemptLimit: 100,
+              blockDurationMinutes: 0
+            },
+            passwordHistoryUniquenessCount: 0
+          }),
+          SchemaModule.forRoot({
+            formats: [DATE_TIME]
           })
         ]
       }).compile();
@@ -149,13 +158,16 @@ describe("Status", () => {
 
     it("should return status of identity module", async () => {
       // insert identities
-      await req.post("/passport/identity", {
-        identifier: "Naya",
-        password: "something_secret"
-      });
+      await req
+        .post("/passport/identity", {
+          identifier: "Naya",
+          password: "somethingsecret123456"
+        })
+        .then(console.log)
+        .catch(console.log);
       await req.post("/passport/identity", {
         identifier: "xavier",
-        password: "very_secret"
+        password: "verysecret123456"
       });
 
       const res = await req.get("/status/identity");

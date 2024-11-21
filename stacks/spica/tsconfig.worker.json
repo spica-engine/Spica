@@ -1,15 +1,21 @@
 {
-  "extends": "../../tsconfig.json",
+  "exclude": ["dist", "bazel-*", "./stacks/spica/*", "**/**.spec.ts"],
+
   "compilerOptions": {
+    "module": "CommonJS",
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "target": "es2020",
+    "sourceMap": true,
+    "baseUrl": "./",
     "outDir": "./out-tsc/worker",
-    "lib": [
-      "es2018",
-      "webworker"
-    ],
+    "lib": ["es2018", "webworker"],
     "types": []
   },
-  "include": [
-    "src/**/*.worker.ts",
-    "packages/**/*.worker.ts"
-  ]
+  "include": ["src/**/*.worker.ts", "packages/**/*.worker.ts"]
 }

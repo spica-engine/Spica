@@ -1,7 +1,13 @@
 import {Inject, Injectable} from "@nestjs/common";
-import {BaseCollection, DatabaseService, ObjectId} from "@spica-server/database";
+import {
+  BaseCollection,
+  DatabaseService,
+  ObjectId,
+  ReturnDocument,
+  WithId
+} from "@spica-server/database";
 import {PipelineBuilder} from "@spica-server/database/pipeline";
-import {StorageObject, StorageObjectMeta} from "./body";
+import {StorageObject, StorageObjectContent, StorageObjectMeta} from "./body";
 import {StorageOptions, STORAGE_OPTIONS} from "./options";
 import {Strategy} from "./strategy/strategy";
 import * as fs from "fs";
@@ -109,17 +115,17 @@ export class StorageService extends BaseCollection<StorageObjectMeta>("storage")
   putUrls(objects: StorageResponse[]) {
     const urlPromises = [];
     for (const object of objects) {
-      urlPromises.push(this.service.url(object._id.toString()).then(r => (object.url = r)));
+      urlPromises.push(this.getUrl(object._id.toString()).then(r => (object.url = r)));
     }
     return Promise.all(urlPromises).then(() => objects);
   }
 
-  async get(id: ObjectId): Promise<StorageObject<Buffer>> {
-    const object: StorageObject<Buffer> = await this._coll.findOne({_id: new ObjectId(id)});
+  async get(id: ObjectId): Promise<WithId<StorageObject<Buffer>>> {
+    const object = await this._coll.findOne({_id: new ObjectId(id)});
     if (!object) return null;
 
-    object.content.data = await this.service.read(id.toHexString());
-    return object;
+    (object as StorageObject<Buffer>).content.data = await this.service.read(id.toHexString());
+    return object as WithId<StorageObject<Buffer>>;
   }
 
   async delete(id: ObjectId): Promise<void> {
@@ -138,9 +144,11 @@ export class StorageService extends BaseCollection<StorageObjectMeta>("storage")
       throw new Error(`Storage object ${_id} could not be found`);
     }
 
-    return this._coll
-      .findOneAndUpdate({_id}, {$set: {name}}, {returnOriginal: false})
-      .then(r => r.value);
+    return this._coll.findOneAndUpdate(
+      {_id},
+      {$set: {name}},
+      {returnDocument: ReturnDocument.AFTER}
+    );
   }
 
   async update(
@@ -174,9 +182,11 @@ export class StorageService extends BaseCollection<StorageObjectMeta>("storage")
 
     await this.validateTotalStorageSize(schemas.reduce((sum, curr) => sum + curr.content.size, 0));
 
-    const insertedObjects = await this._coll
-      .insertMany(schemas)
-      .then(result => result.ops as StorageObjectMeta[]);
+    const result = await this._coll.insertMany(schemas);
+    const insertedObjects = schemas.map((schema, index) => ({
+      ...schema,
+      _id: result.insertedIds[index]
+    }));
 
     for (const [i, object] of insertedObjects.entries()) {
       try {
@@ -203,7 +213,7 @@ export class StorageService extends BaseCollection<StorageObjectMeta>("storage")
   }
 
   async getUrl(id: string) {
-    return this.service.url(id);
+    return Promise.resolve(`${this.storageOptions.defaultPublicUrl}/storage/${id}/view`);
   }
 }
 
