@@ -70,7 +70,7 @@ describe("Identity Setting Component", () => {
     };
     TestBed.configureTestingModule({
       imports: [
-        RouterModule.forRoot([], {relativeLinkResolution: "legacy"}),
+        RouterModule.forRoot([]),
         MatIconModule,
         MatToolbarModule,
         MatMenuModule,
@@ -114,33 +114,41 @@ describe("Identity Setting Component", () => {
 
   describe("basic behaviours", () => {
     it("should show title and button", () => {
-      expect(
-        fixture.debugElement.query(
-          By.css(
-            "mat-list-item:first-of-type mat-expansion-panel:first-of-type mat-panel-title span"
-          )
-        ).nativeElement.textContent
-      ).toBe("Title");
+      // Query for mat-expansion-panel and its title
+      const panelTitleElement = fixture.debugElement.query(
+        By.css("mat-expansion-panel mat-panel-title span")
+      );
+      expect(panelTitleElement).toBeTruthy();
+      expect(panelTitleElement.nativeElement.textContent.trim()).toBe("Title");
 
-      expect(
-        fixture.debugElement.query(By.css("mat-list-item.property button")).nativeElement.disabled
-      ).toBe(true);
+      // Query for the property button inside mat-list-item
+      const propertyButtonElement = fixture.debugElement.query(
+        By.css("mat-list-item.property button")
+      );
+      expect(propertyButtonElement).toBeTruthy();
+      expect(propertyButtonElement.nativeElement.disabled).toBe(true);
     });
 
     it("should show settings of prop1", fakeAsync(() => {
       fixture.debugElement
-        .query(By.css("mat-list-item:first-of-type mat-expansion-panel:first-of-type mat-menu"))
+        .query(By.css("mat-mdc-list-item:first-of-type mat-expansion-panel:first-of-type mat-menu"))
         .nativeElement.click();
 
       tick();
       fixture.detectChanges();
 
       expect(
-        document.body.querySelector("div.mat-menu-item:nth-child(1) mat-checkbox").classList
-      ).toContain("mat-checkbox-checked", "this should be checked if this property is readonly");
+        document.body.querySelector("div.mat-mdc-menu-item:nth-child(1) mat-checkbox").classList
+      ).toContain(
+        "mat-mdc-checkbox-checked",
+        "this should be checked if this property is readonly"
+      );
       expect(
-        document.body.querySelector("div.mat-menu-item:nth-child(2) mat-checkbox").classList
-      ).toContain("mat-checkbox-checked", "this should be checked if this property is required");
+        document.body.querySelector("div.mat-mdc-menu-item:nth-child(2) mat-checkbox").classList
+      ).toContain(
+        "mat-mdc-checkbox-checked",
+        "this should be checked if this property is required"
+      );
     }));
 
     it("should define input placer area of prop1", () => {

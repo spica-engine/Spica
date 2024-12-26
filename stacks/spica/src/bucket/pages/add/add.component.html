@@ -4,15 +4,16 @@
       <mat-icon>{{ bucket.icon }}</mat-icon>
       <span>{{ bucket.title }}</span>
 
-      <mat-chip-list *ngIf="bucket.readOnly">
-        <mat-chip disableRipple>Read Only</mat-chip>
-      </mat-chip-list>
+      <mat-chip-listbox *ngIf="bucket.readOnly">
+        <mat-chip-option disableRipple>Read Only</mat-chip-option>
+      </mat-chip-listbox>
     </h4>
     <h6>{{ bucket.description }}</h6>
   </span>
 
   <span class="space-between"></span>
   <button
+    id="historyButton"
     *ngIf="histories$ | async; let histories"
     mat-icon-button
     [matBadge]="histories.length"
@@ -28,7 +29,7 @@
           mat-icon-button
           mat-raised-button
           [disabled]="!now"
-          class="mat-elevation-z0"
+          class="mat-mdc-elevation-z0"
           (click)="data = now; $event.stopPropagation()"
           matTooltip="Now"
           matTooltipPosition="before"
@@ -40,7 +41,7 @@
           mat-icon-button
           mat-raised-button
           color="accent"
-          class="mat-elevation-z0"
+          class="mat-mdc-elevation-z0"
           (click)="revert(history._id); $event.stopPropagation()"
           [matTooltip]="history.date | date: 'MMM d y, h:mm:ss a'"
           matTooltipPosition="before"
@@ -55,7 +56,12 @@
   </button>
 </mat-toolbar>
 
-<mat-card *ngIf="bucket$ | async; let bucket" class="mat-elevation-z25" @smooth>
+<mat-card
+  appearance="outlined"
+  *ngIf="bucket$ | async; let bucket"
+  class="mat-mdc-elevation-z25"
+  @smooth
+>
   <mat-card-content [class.handset]="isHandset$ | async">
     <form #form="ngForm">
       <div *ngFor="let layout of layouts" [class]="layout">
@@ -106,7 +112,7 @@
       (click)="saveBucketRow()"
       [ngSwitch]="state"
     >
-      <mat-icon *ngSwitchDefault>save</mat-icon>
+      <mat-icon id="matIcon" *ngSwitchDefault>save</mat-icon>
       <mat-progress-spinner
         *ngSwitchCase="'saving'"
         [diameter]="18"
@@ -115,7 +121,7 @@
       ></mat-progress-spinner>
       <mat-icon *ngSwitchCase="'saved'">done</mat-icon>
       <mat-icon *ngSwitchCase="'failed'">clear</mat-icon>
-      <span>{{ (!state ? "save" : state) | titlecase }}</span>
+      <span id="save">{{ (!state ? "save" : state) | titlecase }}</span>
     </button>
   </mat-card-actions>
 </mat-card>
